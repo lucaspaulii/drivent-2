@@ -3,12 +3,12 @@ import { Prisma, Ticket, TicketType } from '@prisma/client';
 import dayjs from 'dayjs';
 import enrollmentRepository from '../enrollment-repository';
 
-async function getTicketTypes(): Promise<TicketType[]> {
+async function findAllTypes(): Promise<TicketType[]> {
   const types = await prisma.ticketType.findMany();
   return types;
 }
 
-async function getUserTicket(enrollmentId: number): Promise<Ticket> {
+async function findFirstUserTicket(enrollmentId: number): Promise<Ticket> {
   const ticket = await prisma.ticket.findFirst({
     select: {
       id: true,
@@ -27,7 +27,7 @@ async function getUserTicket(enrollmentId: number): Promise<Ticket> {
   return ticket;
 }
 
-async function postUserTicket(ticketTypeId: number, enrollmentId: number): Promise<Ticket> {
+async function createUserTicket(ticketTypeId: number, enrollmentId: number): Promise<Ticket> {
   const now = dayjs().toString();
   const ticket = await prisma.ticket.create({
     data: {
@@ -50,7 +50,7 @@ async function postUserTicket(ticketTypeId: number, enrollmentId: number): Promi
   return ticket;
 }
 
-async function putPaymentTicket(enrollmentId: number) {
+async function updatePaymentTicket(enrollmentId: number) {
   const ticketId = await prisma.ticket.findFirst({
     select: {
       id: true,
@@ -70,10 +70,10 @@ async function putPaymentTicket(enrollmentId: number) {
 }
 
 const ticketsRepository = {
-  getTicketTypes,
-  getUserTicket,
-  postUserTicket,
-  putPaymentTicket
+  findAllTypes,
+  findFirstUserTicket,
+  createUserTicket,
+  updatePaymentTicket
 };
 
 export default ticketsRepository;
