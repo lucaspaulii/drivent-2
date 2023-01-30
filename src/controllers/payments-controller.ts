@@ -1,6 +1,7 @@
 import { AuthenticatedRequest } from '@/middlewares';
 import enrollmentRepository from '@/repositories/enrollment-repository';
 import ticketsRepository from '@/repositories/tickets-repository';
+import { createPaymentSchema } from '@/schemas/payment-schema';
 import paymentService from '@/services/payment-service';
 import ticketsService from '@/services/tickets-services';
 import { inputPayment } from '@prisma/client';
@@ -31,9 +32,13 @@ export async function postPayment(req: AuthenticatedRequest, res: Response) {
   const inputPayment = req.body as inputPayment;
   const { userId } = req;
 
-  if (!inputPayment.cardData) return res.sendStatus(400);
-
-  if (!inputPayment.ticketId) return res.sendStatus(400);
+  const { error } = createPaymentSchema.validate(inputPayment, {
+    abortEarly: false,
+  });
+  if (error) {
+    const errors = error.details.map((detail) => detail.message);
+    return res.status(400).send(errors);
+  }
 
   try {
     const ticket = await ticketsRepository.findTicketById(inputPayment.ticketId);
