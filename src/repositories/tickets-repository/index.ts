@@ -1,7 +1,6 @@
 import { prisma } from '@/config';
-import { Prisma, Ticket, TicketType } from '@prisma/client';
-import dayjs from 'dayjs';
-import enrollmentRepository from '../enrollment-repository';
+import { insertTicket } from '@prisma/client';
+import { Ticket, TicketType } from '@prisma/client';
 
 async function findAllTypes(): Promise<TicketType[]> {
   const types = await prisma.ticketType.findMany();
@@ -27,16 +26,9 @@ async function findFirstUserTicket(enrollmentId: number): Promise<Ticket> {
   return ticket;
 }
 
-async function createUserTicket(ticketTypeId: number, enrollmentId: number): Promise<Ticket> {
-  const now = dayjs().toString();
+async function createUserTicket(insertTicket: insertTicket): Promise<Ticket> {
   const ticket = await prisma.ticket.create({
-    data: {
-      ticketTypeId,
-      enrollmentId,
-      status: 'RESERVED',
-      createdAt: now,
-      updatedAt: now,
-    },
+    data: insertTicket,
     select: {
       id: true,
       status: true,
@@ -50,18 +42,10 @@ async function createUserTicket(ticketTypeId: number, enrollmentId: number): Pro
   return ticket;
 }
 
-async function updatePaymentTicket(enrollmentId: number) {
-  const ticketId = await prisma.ticket.findFirst({
-    select: {
-      id: true,
-    },
-    where: {
-      enrollmentId,
-    },
-  });
+async function updatePaymentTicket(enrollmentId: number, ticketId: number) : Promise<void> {
   await prisma.ticket.update({
     where: {
-      id: ticketId.id,
+      id: ticketId,
     },
     data: {
       status: 'PAID',
@@ -69,11 +53,31 @@ async function updatePaymentTicket(enrollmentId: number) {
   });
 }
 
+async function findTicketById(ticketId: number) {
+  const ticket = await prisma.ticket.findFirst({
+    select: {
+      id: true,
+      status: true,
+      ticketTypeId: true,
+      enrollmentId: true,
+      TicketType: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    where: {
+      id: ticketId,
+    },
+  });
+
+  return ticket;
+}
+
 const ticketsRepository = {
   findAllTypes,
   findFirstUserTicket,
   createUserTicket,
-  updatePaymentTicket
+  updatePaymentTicket,
+  findTicketById
 };
 
 export default ticketsRepository;
